@@ -1,22 +1,68 @@
 <?php
 
+namespace Name2Age\Command;
+
+/**
+ * A command that determines how old a person is likely to be based on a given name
+ * 
+ * How to use:
+ * $name2age = new \Name2Age\Command\Name2AgeCommand();
+ * $result = $name2age->run();
+ * 
+ * @package Name2Age\Command
+ * @author Allan DEMARBRE <demarbreallan.dev@gmail.com>
+ * @version 1.0
+ */
 class Name2AgeCommand {
-
+    /**
+     * Path to the dataset
+     * 
+     * @var string $FILE_PATH
+     */
     private static string $FILE_PATH = './nat2019.csv';
-    private int $param_nb = 0;
-    private string $cmd_name;
-    private array $argv = [];
 
-    public function __construct($argv) {
+    /**
+     * Number of params passed to the command
+     * 
+     * @var int $param_nb
+     */
+    private int $param_nb;
+
+    /**
+     * Name of the command
+     * 
+     * @var string $cmd_name
+     */
+    private string $cmd_name;
+
+    /**
+     * Array of params passed to the command
+     * 
+     * @var array $argv
+     */
+    private array $argv;
+
+    /**
+     * Constructor of the command class
+     * 
+     * @param array $argv
+     *      Array containing the arguments passed to the command
+     */
+    public function __construct(array $argv) {
         $this->param_nb = count($argv);
         $this->cmd_name = $argv[0];
         $this->argv = $argv;
     }
 
-    // Runs the command 
+    /**
+     * Runs the command
+     * 
+     * @return bool 
+     *      Whether the command was successful or not 
+     */
     public function run() : bool {
         // If the script is not executed in a CLI, do nothing
-        if(php_sapi_name() !== 'cli') {
+        if(! $this->isCLI()) {
             echo $this->colorText('Error', 'red') . ": this script is a command line tool, it should be used in a CLI\n\r";
             return false;
         }
@@ -24,7 +70,7 @@ class Name2AgeCommand {
         // If there are no params specified 
         if($this->param_nb <= 1 || $this->param_nb > 2) {
             echo $this->colorText('Error', 'red') . ": Incorrect number of params\n\r";
-            $this->printHelp($this->cmd_name);
+            $this->printHelp();
             return false;
         }
 
@@ -34,7 +80,7 @@ class Name2AgeCommand {
             switch($second_param) {
                 case '-h':
                 case '--help':
-                    $this->printHelp($this->cmd_name, true);
+                    $this->printHelp(true);
                     break;
                 default: 
                     return  $this->getAgeFromName($second_param);
@@ -45,7 +91,26 @@ class Name2AgeCommand {
         return true;
     }
 
-    // Determines an age from a given name
+    /**
+     * Determines if the command is running in a CLI
+     * 
+     * @return bool
+     *      Whether the command is running in a CLI or not
+     */
+    private function isCLI() : bool {
+        return php_sapi_name() === 'cli';
+    }
+
+    /**
+     * Determines an age from a given name
+     * 
+     * @param string $name
+     *      The name of the person whose age is to be determined
+     * 
+     * @return bool
+     *      Whether an error occured or not 
+     */
+    // 
     private function getAgeFromName(string $name) : bool {
         $formated_name = strtoupper($this->stripAccents($name));
 
@@ -72,7 +137,7 @@ class Name2AgeCommand {
         arsort($number_by_year);
 
         $most_likely_year = array_key_first($number_by_year);
-        $current_year = (new DateTime())->format('Y');
+        $current_year = (new \DateTime())->format('Y');
         $age = (int) $current_year - (int) $most_likely_year;
 
         echo $this->colorText('Success', 'green') . ": '$name' is most likely to be $age years old.\n\r";
@@ -80,22 +145,45 @@ class Name2AgeCommand {
         return true;
     }
 
-    // Prints the "help" text to the CLI
-    private function printHelp(string $cmd_name, bool $full_help = false) : void {
+    /**
+     * Prints the "help" text to the CLI
+     * 
+     * @param bool $full_help
+     *      Whether to display the full help text or just a part of it
+     * 
+     * @return void
+     */
+    private function printHelp(bool $full_help = false) : void {
         if($full_help) {
             echo "\n\rThis command line tool is written in PHP.\n\r";
-            echo "It determines the age a person is most likely to be based on a given name.\n\r\n\r";
+            echo "It determines how old a person is most likely to be based on a given name.\n\r\n\r";
             
-            echo "Usage: $cmd_name [-h, --help] name\n\r";
-            echo "   --help, -h : displays this text\n\r";
-            echo "   name : the name of the person the age is to be determined\n\r\n\r"; 
+            echo "Usage:\n\r";
+            echo "  $this->cmd_name [--help, -h]\n\r";
+            echo "      --help, -h : displays this text\n\r";
+            echo "\n\r";
+            echo "  $this->cmd_name name\n\r";
+            echo "      name : the name of the person\n\r\n\r"; 
         } else {
-            echo "Usage: $cmd_name name\n\r";
-            echo "For more info, please use '$cmd_name -h' or '$cmd_name --help' \n\n";
+            echo "Usage: $this->cmd_name name\n\r";
+            echo "For more info, please use '$this->cmd_name -h' or '$this->cmd_name --help' \n\n";
         }
     }
 
-    // Takes a string and adds colors to it
+    /**
+     * Takes a string and adds colors to it
+     * 
+     * @param string $text
+     *      The text to add color to
+     * @param string $color
+     *      The color to add to the text
+     * @param string $default_color
+     *      The color the non-colored part of the text should be
+     * 
+     * @return string 
+     *      The colored text
+     */
+    // 
     private function colorText(string $text, string $color, ?string $default_color = 'white') : string {
         $color_to_code = [
             'white' => "\e[97m", 
@@ -109,7 +197,15 @@ class Name2AgeCommand {
         return $color_to_code[$color] . $text . $color_to_code[$default_color];
     }
 
-    // Strips accents from a string
+    /**
+     * Strips accents from a string
+     * 
+     * @param string $str 
+     *      The string to strip accents from
+     * 
+     * @return string
+     *      The string with accents stripped from it
+     */
     private function stripAccents(string $str) : string {
         $unwanted_array = [
             'Š'=>'S', 'š'=>'s', 'Ž'=>'Z', 'ž'=>'z', 'À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', 'Ä'=>'A', 'Å'=>'A', 'Æ'=>'A', 'Ç'=>'C', 'È'=>'E', 
@@ -123,7 +219,7 @@ class Name2AgeCommand {
 }
 
 // Running the command
-$name2age_command = new Name2AgeCommand($argv);
+$name2age_command = new \Name2Age\Command\Name2AgeCommand($argv);
 $result = $name2age_command->run();
 
 exit((int) $result);
