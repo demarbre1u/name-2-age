@@ -6,7 +6,7 @@ This project is a command line tool that determines how old a person is most lik
 
 To that end, it uses [this dataset](https://www.insee.fr/fr/statistiques/2540004#consulter).
 
-Requires PHP@7.4 or higher to run.
+PHP@7.4 or higher is required to run the command.
 
 ## How to use :
 
